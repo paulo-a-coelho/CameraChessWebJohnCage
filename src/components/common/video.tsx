@@ -109,11 +109,13 @@ const Video = ({ piecesModelRef, canvasRef, videoRef, sidebarRef, playing,
       dispatch(cornersSet(payload))
     })
   });
-
   useEffect(() => {
     updateWidthHeight();
 
     let streamPromise: Promise<MediaStream> | null = null;
+    
+    // 1. ALWAYS request the webcam immediately on mount (except in upload mode)
+    // This makes sure the camera is visible right away so you can detect corners!
     if (mode !== "upload") {
       streamPromise = navigator.mediaDevices.getUserMedia(MEDIA_CONSTRAINTS)
         .then((stream) => {
@@ -121,15 +123,26 @@ const Video = ({ piecesModelRef, canvasRef, videoRef, sidebarRef, playing,
             videoRef.current.srcObject = stream;
           }
           return stream;
+        })
+        .catch((err) => {
+          console.error("Camera access denied or unavailable", err);
+          setText(["Camera access required", "Please allow camera access and try again."]);
+          return null;
         });
     }
 
-    const stopDetection = findPieces(piecesModelRef, videoRef, canvasRef, playingRef, setText, dispatch,
-      cornersRef, boardRef, movesPairsRef, lastMoveRef, moveTextRef, mode);
+    // 2. ONLY start the mathematical piece tracking scan loop if recording/playing is active
+    let stopDetection = () => {};
+    if (playing) {
+      stopDetection = findPieces(
+        piecesModelRef, videoRef, canvasRef, playingRef, setText, dispatch,
+        cornersRef, boardRef, movesPairsRef, lastMoveRef, moveTextRef, mode
+      );
+    }
 
     const stopWebcam = async () => {
       const stream = await streamPromise;
-      if (stream !== null) {
+      if (stream !== null && stream !== undefined) {
         stream.getTracks().forEach((track) => {
           track.stop();
         });
@@ -140,7 +153,9 @@ const Video = ({ piecesModelRef, canvasRef, videoRef, sidebarRef, playing,
       stopDetection();
       void stopWebcam();
     }
-  }, [canvasRef, cornersRef, dispatch, mode, piecesModelRef, playingRef, setText, videoRef]);
+    // 3. Make sure 'playing' is in the dependency array so it safely toggles the scan loop on and off
+  }, [canvasRef, cornersRef, dispatch, mode, piecesModelRef, playing, playingRef, setText, videoRef]);
+
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: window size changes intentionally trigger this effect event.
   useEffect(() => {
