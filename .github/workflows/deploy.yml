@@ -27,8 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Auto-fix linting issues
+        run: npx @biomejs/biome check --write --no-errors-on-unsupported || true
+
       - name: Build project
-        run: npm run build -- --base=/CameraChessWeb/
+        run: npx vite build --base=/CameraChessWeb/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
