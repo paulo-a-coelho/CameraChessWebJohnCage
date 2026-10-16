@@ -59,8 +59,10 @@ const router = createBrowserRouter([
         element: <FAQ />
       }
     ]
-  }
-]);
+  }  
+], {
+  basename: "/CameraChessWebJohnCage" // <--- Add this exact block here
+});
 
 const rootElement = document.getElementById('root');
 if (rootElement === null) {
