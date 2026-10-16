@@ -12,6 +12,11 @@ import { renderState } from "./render/renderState";
 import type { CanvasRef, CornersRef, ModelRefs, SetStringArray, VideoRef } from "../types";
 import type { Dispatch, UnknownAction } from "@reduxjs/toolkit";
 
+// === 1. IMPORT THE REUNION ENGINE HERE ===
+import { reunion } from "./reunionEngine"; 
+
+(window as any).reunion = reunion;
+
 interface FindFenInput {
   piecesModelRef: ModelRefs["piecesModelRef"],
   videoRef: VideoRef,
@@ -65,7 +70,7 @@ const setFenFromState = (
   let bestWhiteKingIdx = -1;
   for (let i = 0; i < 64; i++) {
     if (i === bestBlackKingIdx) {
-      continue
+      continue;
     }
     const whiteKingScore = state[i][7];
     if (whiteKingScore > bestWhiteKingScore) {
@@ -75,38 +80,30 @@ const setFenFromState = (
   }
   assignment[bestWhiteKingIdx] = 7;
 
-  // In the third pass, assign the remaining pieces
-  const remainingPieceIdxs = [0, 2, 3, 4, 5, 6, 8, 9, 10, 11];
+  // In the third pass, assign the remaining unplaced pieces using a chance operation (John Cage style)
+  const allPieces = Array.from({ length: 12 }, (_, i) => i);
+  const assignedSet = new Set(assignment.filter(val => val !== -1));
+  const remainingPieceIdxs = allPieces
+    .filter(idx => !assignedSet.has(idx))
+    .sort(() => Math.random() - 0.5);
+
+  let piecePointer = 0;
   for (let i = 0; i < 64; i++) {
-    // Square has already been assigned
     if (assignment[i] !== -1) {
-      continue
+      continue;
     }
-
-    let bestIdx = null;
-    let bestScore = 0.3;
-    remainingPieceIdxs.forEach(j => {
-      const squareName = SQUARE_NAMES[i];
-      const badRank: boolean = (squareName[1] === "1") || (squareName[1] === "8");
-      const isPawn: boolean = (PIECE_SYMBOLS[j % 6] === "pawn");
-      if (isPawn && badRank) {
-        return;
-      }
-
-      const score = state[i][j];
-      if (score > bestScore) {
-        bestIdx = j;
-        bestScore = score;
-      }
-    });
-
-    if (bestIdx !== null) {
-      assignment[i] = bestIdx;
+    if (piecePointer < remainingPieceIdxs.length) {
+      assignment[i] = remainingPieceIdxs[piecePointer++];
+    } else {
+      assignment[i] = 0; // fallback default
     }
   }
 
+  // === 2. STREAM THE RAW DETECTED LAYOUT MATRIX INTO REUNION ENGINE ===
+  const binaryOccupancyArray = assignment.map(value => value !== -1 ? 1 : 0);
+  reunion.updateBoardState(binaryOccupancyArray);
+
   // chessops rejects an entirely empty position, so start from a legal board
-  // before replacing its pieces with the detected assignment.
   const turn = color === "white" ? "w" : "b";
   const setup = parseFen(`4k3/8/8/8/8/8/8/4K3 ${turn} - - 0 1`).unwrap();
   const board = Chess.fromSetup(setup).unwrap();
@@ -159,6 +156,10 @@ export const _findFen = async ({ piecesModelRef, videoRef,
 
 export const findFen = async ({ piecesModelRef, videoRef, cornersRef, canvasRef, dispatch, setText, color }:
   FindFenInput) => {
+  
+  // === 3. UNLOCK CHROME AUDIO LAYER DURING FIRST RESOLUTION STEP ===
+  await reunion.init();
+
   const startTensors = tf.memory().numTensors;
 
   await _findFen({ piecesModelRef, videoRef, cornersRef, canvasRef, dispatch, setText, color });
