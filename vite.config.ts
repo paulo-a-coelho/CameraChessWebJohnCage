@@ -2,15 +2,16 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vitejs.dev/config/
+// https://vitejs.dev
 export default defineConfig({
-  base: '/CameraChessWebJohnCage/',
+  base: '/CameraChessWebJohnCage/', 
   define: {
     "process.env": {},
   },
   plugins: [
     react(),
     VitePWA({
+      registerType: 'autoUpdate',
       workbox: {
         globPatterns: ["**/*"],
         maximumFileSizeToCacheInBytes: 5000000
@@ -21,15 +22,16 @@ export default defineConfig({
       manifest: {
         "name": "ChessCam",
         "short_name": "ChessCam",
-        "start_url": ".",
+        "start_url": "/CameraChessWebJohnCage/",
+        "scope": "/CameraChessWebJohnCage/",
         "icons": [
           {
-              "src": "/android-chrome-192x192.png",
+              "src": "android-chrome-192x192.png",
               "sizes": "192x192",
               "type": "image/png"
           },
           {
-              "src": "/android-chrome-512x512.png",
+              "src": "android-chrome-512x512.png",
               "sizes": "512x512",
               "type": "image/png"
           }
@@ -41,6 +43,6 @@ export default defineConfig({
     })
   ],
   build: {
-    chunkSizeWarningLimit: 2000, // handle warning on vendor.js bundle size
+    chunkSizeWarningLimit: 2000, 
   },
 });
