@@ -32,11 +32,16 @@ const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <Home />,
+        // element: <Home />,
+        element: <VideoAndSidebar mode="record" />
       },
       {
         path: "/record",
         element: <VideoAndSidebar mode="record" />
+      },
+      {
+        path: "/home", // Optional: Move Home to its own route if you still need it
+        element: <Home />,
       },
       {
         path: "/upload",
