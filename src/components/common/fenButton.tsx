@@ -2,6 +2,7 @@ import { useState } from "react";
 import { findFen } from "../../utils/findFen";
 import { useDispatch } from 'react-redux';
 import { gameResetFen, gameResetMoves, gameResetStart } from "../../slices/gameSlice";
+import { reunion } from "../../utils/reunionEngine"; // Import reunion engine
 import type { Color } from "chessops/types";
 import type { CanvasRef, CornersRef, ModelRefs, SetStringArray, VideoRef } from "../../types";
 
@@ -17,7 +18,15 @@ const FenButton = ({ piecesModelRef, videoRef, canvasRef, setText, cornersRef }:
   const dispatch = useDispatch();
   const [option, setOption] = useState<string>(options[0]);
 
-  const handleClick = (option: string) => {
+  const handleClick = async (option: string) => {
+    // Unlock audio layer on any button click (valid user gesture)
+        try {
+      // 1. Await the initialization fully before proceeding
+      await reunion.init();
+    } catch (audioError) {
+      console.error("Failed to initialize audio engine:", audioError);
+    }
+
     if (option === "Normal") {
       dispatch(gameResetStart());
       dispatch(gameResetMoves());
@@ -39,9 +48,9 @@ const FenButton = ({ piecesModelRef, videoRef, canvasRef, setText, cornersRef }:
         Start: {option}
       </button>
       <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-        {options.map((option) =>
-          <li key={option}>
-            <button type="button" onClick={() => handleClick(option)} className="dropdown-item">{option}</button>
+        {options.map((opt) =>
+          <li key={opt}>
+            <button type="button" onClick={() => void handleClick(opt)} className="dropdown-item">{opt}</button>
           </li>
         )}
       </ul>
