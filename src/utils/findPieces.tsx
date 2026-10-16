@@ -14,6 +14,7 @@ import { makeUci } from "chessops/util";
 import type { Dispatch, UnknownAction } from "@reduxjs/toolkit";
 import type { RefObject } from "react";
 import type { Position } from "chessops/chess";
+import { reunion } from "./reunionEngine"; // Adjust this relative path depending on your directory structure
 
 const calculateScore = (state: number[][], move: MovesData, from_thr = 0.6, to_thr = 0.6) => {
   let score = 0;
@@ -272,12 +273,21 @@ export const findPieces = (
         }
 
         if (hasMove || hasGreedyMove) {
-          // No takebacks in "play" mode
           const greedy = (mode === "play") ? false : hasGreedyMove;
           const payload = makeUpdatePayload(boardRef.current, greedy);
           console.log("payload", payload);
           dispatch(gameUpdate(payload));
+          
+          // Execute audio translation tracking pass
+          try {
+			  console.log("🔊 Sending board object to Reunion Engine...");
+            reunion.updateBoardState(boardRef.current);
+          } catch (e) {
+            console.error("Failed executing audio transition pass", e);
+          }
         }
+
+
         setText([`FPS: ${fps}`, moveTextRef.current]);
 
         const canvas = canvasRef.current;
