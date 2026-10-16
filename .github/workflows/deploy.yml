@@ -27,8 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build project bypassing linter errors
-        run: npx vite build --base=/CameraChessWeb/
+      - name: Clean up linter blocks
+        run: npx @biomejs/biome check --write --no-errors-on-unsupported || true
+
+      - name: Build project directly
+        run: npx vite build --base=./
 
       - name: Copy manifest assets
         run: |
