@@ -4,7 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev
 export default defineConfig({
-  base: '/CameraChessWebJohnCage/', 
+  base: './', // Using relative path injection to keep asset folder links local
   define: {
     "process.env": {},
   },
@@ -12,6 +12,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'inline', // Safely inlines register hooks to avoid pathing blocks
       workbox: {
         globPatterns: ["**/*"],
         maximumFileSizeToCacheInBytes: 5000000
@@ -22,8 +23,8 @@ export default defineConfig({
       manifest: {
         "name": "ChessCam",
         "short_name": "ChessCam",
-        "start_url": "/CameraChessWebJohnCage/",
-        "scope": "/CameraChessWebJohnCage/",
+        "start_url": ".",
+        "scope": ".",
         "icons": [
           {
               "src": "android-chrome-192x192.png",
