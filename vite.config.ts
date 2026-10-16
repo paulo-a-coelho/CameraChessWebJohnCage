@@ -4,7 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev
 export default defineConfig({
-  base: './', // Using relative path injection to keep asset folder links local
+  base: '/CameraChessWebJohnCage/', // Using relative path injection to keep asset folder links local
   define: {
     "process.env": {},
   },
