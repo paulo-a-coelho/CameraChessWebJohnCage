@@ -53,6 +53,26 @@ class ReunionEngine {
   }
 
   /**
+   * 👉 NEW: Stops all audio tracks and releases synths when recording stops
+   */
+  public stop(): void {
+    if (!this.initialized) return;
+
+    this.audioTracks.forEach(track => {
+      // Mute volume immediately
+      track.volumeNode.volume.setValueAtTime(-Infinity, Tone.now());
+      try {
+        track.synth.triggerRelease(Tone.now());
+      } catch (e) {
+        // Fallback if already released
+      }
+      track.isPlaying = false;
+    });
+
+    console.log("🛑 Reunion Audio Engine stopped.");
+  }
+
+  /**
    * Safe Diagnostic Test Sound using our new background volume strategy
    */
   public playTestSound(): void {
@@ -65,22 +85,20 @@ class ReunionEngine {
     
     const testTrack = this.audioTracks[0];
     if (testTrack) {
-      // Bring up the volume node using Tone's safe ramping timelines
       testTrack.volumeNode.volume.setValueAtTime(-12, Tone.now());
       testTrack.isPlaying = true;
       
-      // Automatically fade it back out to silent after 1 second
       testTrack.volumeNode.volume.setValueAtTime(-Infinity, Tone.now() + 1.0);
       testTrack.isPlaying = false;
     }
   }
+
   /**
    * Processes the board state safely.
    */
   public updateBoardState(board: any): void {
     if (!this.initialized) return;
 
-    // 1. Check if the object has Chessops' native get() method on its board sub-property
     const hasChessopsGetMethod = board && board.board && typeof board.board.get === 'function';
 
     const trackMuteRequests = new Array(16).fill(true);
@@ -90,7 +108,6 @@ class ReunionEngine {
     for (let i = 0; i < 64; i++) {
       const rank = Math.floor(i / 8) + 1; // Ranks 1 to 8
       
-      // 2. Query Chessops directly using its formal native .get() selector method
       let isOccupied = false;
       if (hasChessopsGetMethod) {
         isOccupied = board.board.get(i) !== undefined && board.board.get(i) !== null; 
@@ -103,7 +120,6 @@ class ReunionEngine {
 
       let squareShouldProduceSound = false;
 
-      // 3. John Cage's exact inversion logic:
       if (rank === 1 || rank === 2 || rank === 7 || rank === 8) {
         squareShouldProduceSound = !isOccupied; // ON when open, Silent when covered
       } else {
@@ -117,11 +133,9 @@ class ReunionEngine {
       }
     }
 
-    // Print active tracker audit
     const activeTracksCount = trackMuteRequests.filter(m => m === false).length;
     console.log(`📊 [Reunion Diagnostic] Total Occupied Squares: ${totalOccupied} | Sounding Squares: ${totalSoundingSquares} | Active Audio Tracks: ${activeTracksCount}`);
 
-    // Apply the states purely with volume adjustments inside updateBoardState
     this.audioTracks.forEach((track, id) => {
       const shouldMute = trackMuteRequests[id];
 
@@ -129,13 +143,11 @@ class ReunionEngine {
         track.volumeNode.volume.rampTo(-Infinity, 0.15, Tone.now());
         track.isPlaying = false;
       } else if (!shouldMute && !track.isPlaying) {
-        // Safe mixed volume floor level
         track.volumeNode.volume.rampTo(-16, 0.05, Tone.now()); 
         track.isPlaying = true;
       }
     });
   }
-
 }
 
 export const reunion = new ReunionEngine();
