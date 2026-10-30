@@ -1,4 +1,5 @@
 import * as Tone from 'tone';
+import React, { useEffect } from 'react';
 import { CornersButton, Sidebar, RecordButton, StopButton, FenButton, DeviceButton } from "../common";
 import { reunion } from "../../utils/reunionEngine";
 import type {
@@ -16,10 +17,21 @@ const RecordSidebar = ({ piecesModelRef, xcornersModelRef, videoRef, canvasRef, 
   text: string[], setText: SetStringArray,
   cornersRef: CornersRef
 }) => {
+
+  // 👉 Automatically trigger engine stop when playing becomes false
+  useEffect(() => {
+    if (!playing) {
+      reunion.stop();
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+    }
+  }, [playing]);
+
   const inputStyle = {
     display: playing ? "none": "inline-block"
   }
-    return (
+
+  return (
     <Sidebar sidebarRef={sidebarRef} playing={playing} text={text} setText={setText} >
       <li className="my-1" style={inputStyle}>
         <DeviceButton videoRef={videoRef} />
@@ -33,18 +45,15 @@ const RecordSidebar = ({ piecesModelRef, xcornersModelRef, videoRef, canvasRef, 
         canvasRef={canvasRef} setText={setText} cornersRef={cornersRef} />
       </li>
       
-      {/* ❌ REMOVED THE OUTER <li className="my-1"> WRAPPER FROM HERE */}
       <div className="btn-group w-100" role="group" aria-label="Move detection controls">
         <RecordButton 
           playing={playing} 
           setPlaying={async (val) => {
             if (val === true) {
               try {
-                // 1. Initialize Tone.js via user click gesture
                 await reunion.init(); 
                 console.log("Audio initialized from record click!");
                 
-                // 2. 👉 DIRECT INLINE TEST (Bypasses the engine caching error)
                 const testSynth = new Tone.Synth().toDestination();
                 testSynth.triggerAttackRelease("C4", "4n");
                 console.log("🔊 Inline diagnostic note played successfully!");
@@ -61,7 +70,6 @@ const RecordSidebar = ({ piecesModelRef, xcornersModelRef, videoRef, canvasRef, 
       </div>
     </Sidebar>
   );
-
 };
 
 export default RecordSidebar;
